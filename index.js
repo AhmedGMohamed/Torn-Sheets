@@ -466,26 +466,70 @@ function getHeaderRequests(itemsListLength) {
 	return requests;
 }
 
+function getPriceTiers(itemPrices, averagePrice) {
+	//TODO: place the tier if cases here from the getItemsColoring function	
+}
+
+async function getItemsColoring(batchData, itemsCodeList) {
+	let allItemsPriceTiers = [],
+		currentItem = [],
+		averagePrices = [];
+
+	itemsCodeList = await getItemCodeList(ITEMS_PATH);
+	for (item of itemsCodeList) {
+		try {
+			//TODO: Send a request to the torn API to get the item average market value
+			//const res = await fetch(``)
+			//averagePrices.push(await res.json())
+		} catch (error) {
+			console.error(
+				`Failed to fetch item ${item} average market price`,
+				error
+			);
+		}
+	}
+
+	for (let i = 0; i < itemsCodeList.length(); i++) {
+		const item = itemsCodeList[i];
+
+		currentItem = await getBazaarPrices(TORN_API_KEY, item);
+		currentItem = currentItem[0];
+		currentItem.shift();
+		let itemPriceTier = currentItem.map((price) => {
+			if (price <= averagePrices[i] - averagePrices[i] * 0.5) {
+				return "A";
+			} else if (price <= averagePrices[i] - averagePrices[i] * 0.2) {
+				return "B";
+			} else if (price <= averagePrices[i] + averagePrices[i] * 0.2) {
+				return "C";
+			} else if (price <= averagePrices[i] + averagePrices[i] * 0.5) {
+				return "D";
+			} else {
+				return "F";
+			}
+		});
+		allItemsPriceTiers.push(itemPriceTier);
+	}
+	// TODO: create the color scheme for each price tier
+}
+
 /**
  * Formats the spreadsheet after filling using the fillSpreadsheet() function
- * 
+ *
  * @param {google.auth.OAuth2} auth an instance of the authenticated Google Oauth client
  * @param {sheets_v4.Schema$ValueRange[]} batchData an array containing the mergeCell requests (only used for getting the values inside it)
  */
-async function formatSpreadsheet(auth, batchData) {
+async function formatSpreadsheet(auth) {
 	const sheets = google.sheets({ version: "v4", auth });
 	const itemsList = await getItemCodeList(ITEMS_PATH);
 	const itemsListLength = itemsList.length;
-	let requests = [], value;
+	let requests = [],
+		value,
+		counter = 0;
 
 	requests.push(...getMergeCellsRequests(itemsList));
 	requests.push(...getHeaderRequests(itemsListLength));
-	for (item of batchData) {
-		for (let i = 1; i < item.length; i++) {
-			const element = array[i];
-			
-		}
-	}
+
 	try {
 		await sheets.spreadsheets.batchUpdate({
 			spreadsheetId: "1Dr2Z99FPIMcYpAXdWVebGlw9Kt7jVDM30eYp93aKWp4",
