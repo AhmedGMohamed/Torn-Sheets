@@ -11,6 +11,7 @@
   "type": "module",
   "dependencies": {
     "@google-cloud/local-auth": "^2.1.0",
+    "dotenv": "^16.4.5",
     "googleapis": "^105.0.0"
   }
 }

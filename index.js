@@ -4,6 +4,7 @@ import process from "process";
 import { authenticate } from "@google-cloud/local-auth";
 import { google } from "googleapis";
 import { sheets_v4 } from "googleapis";
+import 'dotenv/config'
 
 // If modifying these scopes, delete token.json.
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
@@ -13,7 +14,7 @@ const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
 const TOKEN_PATH = path.join(process.cwd(), "token.json");
 const CREDENTIALS_PATH = path.join(process.cwd(), "credentials.json");
 const ITEMS_PATH = path.join(process.cwd(), "items.json");
-const TORN_API_KEY = "s7kAPL0OcVwCvvKn";
+const TORN_API_KEY = process.env.TORN_API_KEY;
 
 /**
  * Reads previously authorized credentials from the save file.
@@ -338,16 +339,12 @@ function getMergeCellsRequests(itemsList) {
 }
 
 /**
- * @param {}
-
- */
-/**
  * creates an RepeatCellRequest object that createse a header row
  *
  * @param {number[]}  gridData an array containing the sheetId, start and end indices of both rows and columns
- * @param {sheets_v4.Schema$NumberFormat} numberFormat
- * @param {sheets_v4.Schema$ColorStyle} backgroundColorStyle
- * @param {sheets_v4.Schema$ColorStyle} foregroundColorStyle
+ * @param {sheets_v4.Schema$NumberFormat|null} numberFormat
+ * @param {sheets_v4.Schema$ColorStyle|null} backgroundColorStyle
+ * @param {sheets_v4.Schema$ColorStyle|null} foregroundColorStyle
  * @param {number|null} fontSize
  * @param {boolean|null} bold
  * @param {string|null} horizontalAlignment
@@ -367,14 +364,13 @@ function getRepeatCellRequest(
 ) {
 	let repeatCell,
 		range,
-		{
+		[
 			sheetId,
 			startRowIndex,
 			endRowIndex,
 			startColumnIndex,
 			endColumnIndex
-		} = gridData;
-
+		] = gridData;
 	range = getGridRange(
 		sheetId,
 		startRowIndex,
@@ -398,7 +394,7 @@ function getRepeatCellRequest(
 					}
 				}
 			},
-			fields: "userEnteredFormat(numberFormat, backgroundColor, horizontalAlignment, verticalAlignment textFormat)"
+			fields: "userEnteredFormat(numberFormat, backgroundColorStyle, horizontalAlignment, verticalAlignment, textFormat)"
 		}
 	};
 	return repeatCell;
@@ -428,14 +424,16 @@ function getHeaderRequests(itemsListLength) {
 		rgbColor: {
 			red: 0,
 			green: 0,
-			blue: 0
+			blue: 0,
+			alpha: 1
 		}
 	};
 	foregroundColorStyle = {
 		rgbColor: {
 			red: 1,
 			green: 1,
-			blue: 1
+			blue: 1,
+			alpha: 1
 		}
 	};
 	fontSize = 12;
@@ -454,7 +452,7 @@ function getHeaderRequests(itemsListLength) {
 	updateSheetProperties = {
 		updateSheetProperties: {
 			properties: {
-				sheetId: SHEET_ID,
+				sheetId: 0,
 				gridProperties: {
 					frozenRowCount: 1
 				}
@@ -499,9 +497,9 @@ function getPriceTiers(itemPrices, averagePrice) {
  * B: sheets_v4.Schema$ColorStyle,
  * C: sheets_v4.Schema$ColorStyle,
  * D: sheets_v4.Schema$ColorStyle,
- * E: sheets_v4.Schema$ColorStyle
+ * F: sheets_v4.Schema$ColorStyle
  * }} colors a color pallette to use for the item grading system
- * @returns {Array<Array<sheets_v4.Schema$ColorStyle>>} a 2d array cotaining ColorStyle objects that correspond to each item price's tier
+ * @returns {Promise<Array<Array<sheets_v4.Schema$ColorStyle>>>} a 2d array cotaining ColorStyle objects that correspond to each item price's tier
  */
 async function getItemsColoring(itemsCodeList, colorPallete) {
 	let allItemsPriceTiers = [],
@@ -510,10 +508,10 @@ async function getItemsColoring(itemsCodeList, colorPallete) {
 		colorStyles = [];
 
 	itemsCodeList = await getItemCodeList(ITEMS_PATH);
-	for (item of itemsCodeList) {
+	for (let item of itemsCodeList) {
 		try {
 			const res = await fetch(
-				`https://api.torn.com/torn/${item}?key=${TORN_API_KEY}}&selections=items&comment=CachePriceScript`
+				`https://api.torn.com/torn/${item}?key=${TORN_API_KEY}&selections=items&comment=CachePriceScript`
 			);
 			const marketValue = (await res.json()).items[item].market_value;
 			averagePrices.push(+marketValue);
@@ -525,7 +523,7 @@ async function getItemsColoring(itemsCodeList, colorPallete) {
 		}
 	}
 
-	for (let i = 0; i < itemsCodeList.length(); i++) {
+	for (let i = 0; i < itemsCodeList.length; i++) {
 		const item = itemsCodeList[i];
 		let itemPriceTier;
 
@@ -537,30 +535,112 @@ async function getItemsColoring(itemsCodeList, colorPallete) {
 	}
 
 	allItemsPriceTiers.forEach((item, index) => {
+		let tempArray = [];
 		item.forEach((priceTier) => {
-			colorStyles[index].push(colorPallete[priceTier]);
+			tempArray.push(colorPallete[priceTier]);
 		});
+		colorStyles.push(tempArray);
 	});
 	return colorStyles;
 }
 
 /**
+ * creates a repeatCellRequest for each item and item tier
+ *
+ * @param {*} itemsList a list containing all the items' codes
+ * @returns {Promise<Array<sheets_v4.Schema$RepeatCellRequest>>}
+ */
+async function getItemTierColoringRequests(itemsList) {
+	// color schemes for each price tier
+	const colors = {
+		A: {
+			// green
+			rgbColor: {
+				red: 44 / 255,
+				green: 186 / 255,
+				blue: 0,
+				alpha: 1
+			}
+		},
+		B: {
+			// lime
+			rgbColor: {
+				red: 163 / 255,
+				green: 255 / 255,
+				blue: 0,
+				alpha: 1
+			}
+		},
+		C: {
+			// yellow
+			rgbColor: {
+				red: 255 / 255,
+				green: 244 / 255,
+				blue: 0,
+				alpha: 1
+			}
+		},
+		D: {
+			// orange
+			rgbColor: {
+				red: 255 / 255,
+				green: 167 / 255,
+				blue: 0,
+				alpha: 1
+			}
+		},
+		F: {
+			// red
+			rgbColor: {
+				red: 255 / 255,
+				green: 0,
+				blue: 0,
+				alpha: 1
+			}
+		}
+	};
+	const colorStyles = await getItemsColoring(itemsList, colors);
+	let row = 1,
+		col = 0; // increment row by 1 (starts from 1 to ignore header row) and increment col by 2 (to skip the item count column)
+	let repeatCellRequests = [];
+
+	colorStyles.forEach((item) => {
+		item.forEach((price) => {
+			const gridData = [0, row, row + 1, col, col + 1];
+
+			const repeatCellRequest = getRepeatCellRequest(
+				gridData,
+				null,
+				price,
+				null,
+				null,
+				null,
+				null,
+				null
+			);
+			repeatCellRequests.push(repeatCellRequest);
+			row++;
+		});
+		row = 1;
+		col += 2;
+	});
+	return repeatCellRequests;
+}
+/**
  * Formats the spreadsheet after filling using the fillSpreadsheet() function
  *
  * @param {google.auth.OAuth2} auth an instance of the authenticated Google Oauth client
- * @param {sheets_v4.Schema$ValueRange[]} batchData an array containing the mergeCell requests (only used for getting the values inside it)
  */
 async function formatSpreadsheet(auth) {
 	const sheets = google.sheets({ version: "v4", auth });
 	const itemsList = await getItemCodeList(ITEMS_PATH);
 	const itemsListLength = itemsList.length;
-	let requests = [],
-		value,
-		counter = 0;
+	let requests = [];
 
 	requests.push(...getMergeCellsRequests(itemsList));
 	requests.push(...getHeaderRequests(itemsListLength));
-	requests.push(...getItemTierColoringRequests());
+	let itemTiersRequests = await getItemTierColoringRequests(itemsList);
+	requests.push(...itemTiersRequests);
 	try {
 		await sheets.spreadsheets.batchUpdate({
 			spreadsheetId: "1Dr2Z99FPIMcYpAXdWVebGlw9Kt7jVDM30eYp93aKWp4",
