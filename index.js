@@ -467,10 +467,11 @@ function getHeaderRequests(itemsListLength) {
 }
 
 /**
- * 
+ * Determines the tier of the items using the average market price
+ *
  * @param {number[]} itemPrices a number array containing each price for the item
  * @param {number} averagePrice the average market price for the item
- * @returns {string[]} the tier of each price for the item, ranging from A to F
+ * @returns {string[]} an array containing the price tier of each item, ranging from A to F
  */
 function getPriceTiers(itemPrices, averagePrice) {
 	let itemPriceTier = itemPrices.map((price) => {
@@ -486,20 +487,35 @@ function getPriceTiers(itemPrices, averagePrice) {
 			return "F";
 		}
 	});
-	return itemPriceTier
+	return itemPriceTier;
 }
 
-async function getItemsColoring(batchData, itemsCodeList) {
+/**
+ * gets the market price for each item and returns an array of ColorStyle objects depending on the item's tier
+ *
+ * @param {string[]} itemsCodeList
+ * @param {{
+ * A: sheets_v4.Schema$ColorStyle,
+ * B: sheets_v4.Schema$ColorStyle,
+ * C: sheets_v4.Schema$ColorStyle,
+ * D: sheets_v4.Schema$ColorStyle,
+ * E: sheets_v4.Schema$ColorStyle
+ * }} colors
+ */
+async function getItemsColoring(itemsCodeList, colorPallete) {
 	let allItemsPriceTiers = [],
 		currentItem = [],
-		averagePrices = [];
+		averagePrices = [],
+		colorStyles = [];
 
 	itemsCodeList = await getItemCodeList(ITEMS_PATH);
 	for (item of itemsCodeList) {
 		try {
-			//TODO: Send a request to the torn API to get the item average market value AND PARSE TO INT
-			//const res = await fetch(``)
-			//averagePrices.push(await res.json())
+			const res = await fetch(
+				`https://api.torn.com/torn/${item}?key=${TORN_API_KEY}}&selections=items&comment=CachePriceScript`
+			);
+			const marketValue = (await res.json()).items[item].market_value;
+			averagePrices.push(+marketValue);
 		} catch (error) {
 			console.error(
 				`Failed to fetch item ${item} average market price`,
@@ -518,7 +534,13 @@ async function getItemsColoring(batchData, itemsCodeList) {
 		itemPriceTier = getPriceTiers(currentItem, averagePrices[i]);
 		allItemsPriceTiers.push(itemPriceTier);
 	}
-	// TODO: create the color scheme for each price tier
+
+	allItemsPriceTiers.forEach((item, index) => {
+		item.forEach((priceTier) => {
+			colorStyles[index].push(colorPallete[priceTier]);
+		});
+	});
+	return colorStyles;
 }
 
 /**
@@ -537,7 +559,7 @@ async function formatSpreadsheet(auth) {
 
 	requests.push(...getMergeCellsRequests(itemsList));
 	requests.push(...getHeaderRequests(itemsListLength));
-
+	requests.push(...getItemTierColoringRequests());
 	try {
 		await sheets.spreadsheets.batchUpdate({
 			spreadsheetId: "1Dr2Z99FPIMcYpAXdWVebGlw9Kt7jVDM30eYp93aKWp4",
