@@ -466,8 +466,27 @@ function getHeaderRequests(itemsListLength) {
 	return requests;
 }
 
+/**
+ * 
+ * @param {number[]} itemPrices a number array containing each price for the item
+ * @param {number} averagePrice the average market price for the item
+ * @returns {string[]} the tier of each price for the item, ranging from A to F
+ */
 function getPriceTiers(itemPrices, averagePrice) {
-	//TODO: place the tier if cases here from the getItemsColoring function	
+	let itemPriceTier = itemPrices.map((price) => {
+		if (price < averagePrice - averagePrice * 0.5) {
+			return "A";
+		} else if (price < averagePrice - averagePrice * 0.2) {
+			return "B";
+		} else if (price < averagePrice + averagePrice * 0.2) {
+			return "C";
+		} else if (price < averagePrice + averagePrice * 0.5) {
+			return "D";
+		} else {
+			return "F";
+		}
+	});
+	return itemPriceTier
 }
 
 async function getItemsColoring(batchData, itemsCodeList) {
@@ -478,7 +497,7 @@ async function getItemsColoring(batchData, itemsCodeList) {
 	itemsCodeList = await getItemCodeList(ITEMS_PATH);
 	for (item of itemsCodeList) {
 		try {
-			//TODO: Send a request to the torn API to get the item average market value
+			//TODO: Send a request to the torn API to get the item average market value AND PARSE TO INT
 			//const res = await fetch(``)
 			//averagePrices.push(await res.json())
 		} catch (error) {
@@ -491,23 +510,12 @@ async function getItemsColoring(batchData, itemsCodeList) {
 
 	for (let i = 0; i < itemsCodeList.length(); i++) {
 		const item = itemsCodeList[i];
+		let itemPriceTier;
 
 		currentItem = await getBazaarPrices(TORN_API_KEY, item);
 		currentItem = currentItem[0];
 		currentItem.shift();
-		let itemPriceTier = currentItem.map((price) => {
-			if (price <= averagePrices[i] - averagePrices[i] * 0.5) {
-				return "A";
-			} else if (price <= averagePrices[i] - averagePrices[i] * 0.2) {
-				return "B";
-			} else if (price <= averagePrices[i] + averagePrices[i] * 0.2) {
-				return "C";
-			} else if (price <= averagePrices[i] + averagePrices[i] * 0.5) {
-				return "D";
-			} else {
-				return "F";
-			}
-		});
+		itemPriceTier = getPriceTiers(currentItem, averagePrices[i]);
 		allItemsPriceTiers.push(itemPriceTier);
 	}
 	// TODO: create the color scheme for each price tier
