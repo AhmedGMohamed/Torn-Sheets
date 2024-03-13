@@ -493,14 +493,15 @@ function getPriceTiers(itemPrices, averagePrice) {
 /**
  * gets the market price for each item and returns an array of ColorStyle objects depending on the item's tier
  *
- * @param {string[]} itemsCodeList
+ * @param {string[]} itemsCodeList a list containing the code for each item
  * @param {{
  * A: sheets_v4.Schema$ColorStyle,
  * B: sheets_v4.Schema$ColorStyle,
  * C: sheets_v4.Schema$ColorStyle,
  * D: sheets_v4.Schema$ColorStyle,
  * E: sheets_v4.Schema$ColorStyle
- * }} colors
+ * }} colors a color pallette to use for the item grading system
+ * @returns {Array<Array<sheets_v4.Schema$ColorStyle>>} a 2d array cotaining ColorStyle objects that correspond to each item price's tier
  */
 async function getItemsColoring(itemsCodeList, colorPallete) {
 	let allItemsPriceTiers = [],
