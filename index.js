@@ -4,7 +4,7 @@ import process from "process";
 import { authenticate } from "@google-cloud/local-auth";
 import { google } from "googleapis";
 import { sheets_v4 } from "googleapis";
-import 'dotenv/config'
+import "dotenv/config";
 
 // If modifying these scopes, delete token.json.
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
@@ -137,7 +137,7 @@ async function getItemCodeList(path) {
 }
 /**
  * class that makes an iterable object that returns a string
- * in the form of character sequences e.x: ..., AZ, BA, BB, ...
+ * in the form of character sequences e.x: AA, AB, ..., AZ, BA, BB, ...
  */
 class StringIdGenerator {
 	/**
@@ -240,6 +240,39 @@ async function clearSpreadsheet(sheets) {
 		await sheets.spreadsheets.values.clear({
 			spreadsheetId: "1Dr2Z99FPIMcYpAXdWVebGlw9Kt7jVDM30eYp93aKWp4",
 			range: "Cache Prices!A1:Z100"
+		});
+		let backgroundColorStyleDefault = {
+			rgbColor: {
+				red: 1,
+				green: 1,
+				blue: 1,
+				alpha: 1
+			}
+		},
+			foregroundColorStyleDefault = {
+				rgbColor: {
+					red: 0,
+					green: 0,
+					blue: 0,
+					alpha: 0
+				}
+			};
+		await sheets.spreadsheets.batchUpdate({
+			spreadsheetId: "1Dr2Z99FPIMcYpAXdWVebGlw9Kt7jVDM30eYp93aKWp4",
+			requestBody: {
+				requests: [
+					getRepeatCellRequest(
+						[0, 0, 100, 0, 100],
+						null,
+						backgroundColorStyleDefault,
+						foregroundColorStyleDefault,
+						10,
+						false,
+						null,
+						null
+					)
+				]
+			}
 		});
 	} catch (error) {
 		console.error("an error occured while clearing the spreadsheet", error);
