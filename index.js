@@ -15,6 +15,7 @@ const TOKEN_PATH = path.join(process.cwd(), "token.json");
 const CREDENTIALS_PATH = path.join(process.cwd(), "credentials.json");
 const ITEMS_PATH = path.join(process.cwd(), "items.json");
 const TORN_API_KEY = process.env.TORN_API_KEY;
+const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 
 /**
  * Reads previously authorized credentials from the save file.
@@ -238,17 +239,17 @@ async function getFormattedBatchDataValues(itemsList) {
 async function clearSpreadsheet(sheets) {
 	try {
 		await sheets.spreadsheets.values.clear({
-			spreadsheetId: "1Dr2Z99FPIMcYpAXdWVebGlw9Kt7jVDM30eYp93aKWp4",
+			spreadsheetId: SPREADSHEET_ID,
 			range: "Cache Prices!A1:Z100"
 		});
 		let backgroundColorStyleDefault = {
-			rgbColor: {
-				red: 1,
-				green: 1,
-				blue: 1,
-				alpha: 1
-			}
-		},
+				rgbColor: {
+					red: 1,
+					green: 1,
+					blue: 1,
+					alpha: 1
+				}
+			},
 			foregroundColorStyleDefault = {
 				rgbColor: {
 					red: 0,
@@ -258,7 +259,7 @@ async function clearSpreadsheet(sheets) {
 				}
 			};
 		await sheets.spreadsheets.batchUpdate({
-			spreadsheetId: "1Dr2Z99FPIMcYpAXdWVebGlw9Kt7jVDM30eYp93aKWp4",
+			spreadsheetId: SPREADSHEET_ID,
 			requestBody: {
 				requests: [
 					getRepeatCellRequest(
@@ -292,7 +293,7 @@ async function fillSpreadsheet(auth) {
 	try {
 		await clearSpreadsheet(sheets);
 		const res = await sheets.spreadsheets.values.batchUpdate({
-			spreadsheetId: "1Dr2Z99FPIMcYpAXdWVebGlw9Kt7jVDM30eYp93aKWp4",
+			spreadsheetId: SPREADSHEET_ID,
 			requestBody: {
 				valueInputOption: "RAW",
 				data: batchData
@@ -676,7 +677,7 @@ async function formatSpreadsheet(auth) {
 	requests.push(...itemTiersRequests);
 	try {
 		await sheets.spreadsheets.batchUpdate({
-			spreadsheetId: "1Dr2Z99FPIMcYpAXdWVebGlw9Kt7jVDM30eYp93aKWp4",
+			spreadsheetId: SPREADSHEET_ID,
 			requestBody: {
 				requests: requests
 			}
