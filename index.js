@@ -1,7 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
 import process from "process";
-import { authenticate } from "@google-cloud/local-auth";
 import { google } from "googleapis";
 import { sheets_v4 } from "googleapis";
 import "dotenv/config";
@@ -24,7 +23,12 @@ const GOOGLE_API_KEY = process.env.PRIVATE_KEY.replace(/\\n/g, "\n");
 function authorize() {
 	let client;
 	try {
-		client = new google.auth.JWT(CLIENT_EMAIL, null, GOOGLE_API_KEY, SCOPES);
+		client = new google.auth.JWT(
+			CLIENT_EMAIL,
+			null,
+			GOOGLE_API_KEY,
+			SCOPES
+		);
 	} catch (error) {
 		console.error(
 			"An error occurred while trying to authenticate google api",
