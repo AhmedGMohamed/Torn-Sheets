@@ -240,7 +240,7 @@ async function clearSpreadsheet(sheets) {
 	try {
 		await sheets.spreadsheets.values.clear({
 			spreadsheetId: SPREADSHEET_ID,
-			range: "Cache Prices!A1:Z100"
+			range: "Cache Prices!A1:ZZ1000"
 		});
 		let backgroundColorStyleDefault = {
 				rgbColor: {
@@ -263,7 +263,7 @@ async function clearSpreadsheet(sheets) {
 			requestBody: {
 				requests: [
 					getRepeatCellRequest(
-						[0, 0, 100, 0, 100],
+						[0, 0, 1000, 0, 1000],
 						null,
 						backgroundColorStyleDefault,
 						foregroundColorStyleDefault,
