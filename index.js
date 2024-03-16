@@ -1,7 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
 import process from "process";
-import { authenticate } from "@google-cloud/local-auth";
 import { google } from "googleapis";
 import { sheets_v4 } from "googleapis";
 import "dotenv/config";
@@ -18,20 +17,25 @@ const CLIENT_EMAIL = process.env.CLIENT_EMAIL;
 const GOOGLE_API_KEY = process.env.PRIVATE_KEY.replace(/\\n/g, "\n");
 
 /**
- * Load or request or authorization to call APIs.
+ * request authorization to call API
  *
  */
 function authorize() {
 	let client;
 	try {
-		client = new google.auth.JWT(CLIENT_EMAIL, null, GOOGLE_API_KEY, SCOPES);
+		client = new google.auth.JWT(
+			CLIENT_EMAIL,
+			null,
+			GOOGLE_API_KEY,
+			SCOPES
+		);
+		return client;
 	} catch (error) {
 		console.error(
 			"An error occurred while trying to authenticate google api",
 			error
 		);
 	}
-	return client;
 }
 
 /**
@@ -187,11 +191,11 @@ async function getFormattedBatchDataValues(itemsList) {
 }
 
 /**
- * clears the spreadsheet for use
+ * clears the spreadsheet cells values for use
  *
  * @param {sheets_v4.Sheets} sheets a spreadsheets instance
  */
-async function clearSpreadsheet(sheets) {
+async function clearSpreadsheetValues(sheets) {
 	try {
 		await sheets.spreadsheets.values.clear({
 			spreadsheetId: SPREADSHEET_ID,
@@ -236,6 +240,52 @@ async function clearSpreadsheet(sheets) {
 }
 
 /**
+ * clears the spreadsheet formatting for use
+ * @async
+ * @function clearSpreadsheetFormatting
+ * @param {sheets_v4.Sheets} sheets a spreadsheets instance
+ */
+async function clearSpreadsheetFormatting(sheets) {
+	try {
+		let backgroundColorStyleDefault = {
+				rgbColor: {
+					red: 1,
+					green: 1,
+					blue: 1,
+					alpha: 1
+				}
+			},
+			foregroundColorStyleDefault = {
+				rgbColor: {
+					red: 0,
+					green: 0,
+					blue: 0,
+					alpha: 0
+				}
+			},
+			requests = [
+				getRepeatCellRequest(
+					[0, 0, 1000, 0, 1000],
+					null,
+					backgroundColorStyleDefault,
+					foregroundColorStyleDefault,
+					10,
+					false,
+					null,
+					null
+				)
+			];
+		await sheets.spreadsheets.batchUpdate({
+			spreadsheetId: SPREADSHEET_ID,
+			requestBody: {
+				requests: requests
+			}
+		});
+	} catch (error) {
+		console.error("an error occured while clearing the spreadsheet", error);
+	}
+}
+/**
  * Fills the spreadsheet with the prices and quantities of items in bazaars
  *
  * @param {google.auth.OAuth2} auth an instance of the authenticated Google Oauth client
@@ -246,7 +296,8 @@ async function fillSpreadsheet(auth) {
 	let batchData = await getFormattedBatchDataValues(itemsList);
 
 	try {
-		await clearSpreadsheet(sheets);
+		await clearSpreadsheetValues(sheets);
+		await clearSpreadsheetFormatting(sheets);
 		const res = await sheets.spreadsheets.values.batchUpdate({
 			spreadsheetId: SPREADSHEET_ID,
 			requestBody: {
