@@ -1,4 +1,4 @@
-import getRepeatCellRequest from "./repeatCellRequest";
+import getRepeatCellRequest from "./repeatCellRequest.js";
 import { sheets_v4 } from "googleapis";
 
 /**
@@ -6,7 +6,7 @@ import { sheets_v4 } from "googleapis";
  *
  * @param {sheets_v4.Sheets} sheets a spreadsheets instance
  */
-async function clearSpreadsheetFormatting(sheets) {
+async function clearSpreadsheetFormatting(sheets, spreadsheetId) {
 	try {
 		let backgroundColorStyleDefault = {
 				rgbColor: {
@@ -37,7 +37,7 @@ async function clearSpreadsheetFormatting(sheets) {
 				)
 			];
 		await sheets.spreadsheets.batchUpdate({
-			spreadsheetId: SPREADSHEET_ID,
+			spreadsheetId: spreadsheetId,
 			requestBody: {
 				requests: requests
 			}

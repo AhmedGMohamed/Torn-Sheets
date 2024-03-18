@@ -1,4 +1,4 @@
-import getRepeatCellRequest from "./repeatCellRequest";
+import getRepeatCellRequest from "./repeatCellRequest.js";
 import { sheets_v4 } from "googleapis";
 
 /**

@@ -1,4 +1,4 @@
-import getGridRange from "./gridRange";
+import getGridRange from "./gridRange.js";
 /**
  * creates an RepeatCellRequest object that createse a header row
  *

@@ -1,10 +1,21 @@
 import express from "express";
 import path from "path";
 import process from "process";
-import { itemsRouter } from "./routes/prices";
+import "dotenv/config";
+import itemsRouter from "./routes/prices.js";
+import authorize from "./utils/authorize.js";
+import placeAuth from "./middleware/placeAuth.js";
+
+const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
+const CLIENT_EMAIL = process.env.CLIENT_EMAIL;
+const GOOGLE_API_KEY = process.env.PRIVATE_KEY.replace(/\\n/g, "\n");
 
 const app = express();
 const port = process.env.PORT || 3000;
+export const auth = authorize(CLIENT_EMAIL, null, GOOGLE_API_KEY, SCOPES);
+
+// parse the body as JSON objects
+app.use(express.json());
 
 // Provide the css files as static files
 app.use(express.static(path.resolve("public")));
@@ -15,7 +26,8 @@ app.get("/", (_req, res) => {
 	res.sendFile(path.resolve("index.html"));
 });
 
-app.use("/items", itemsRouter);
+// Handle requests for getting item prices and placing them in the spreadsheet
+app.use("/items", placeAuth, itemsRouter);
 
 //Initializes the server with the port
 app.listen(port, () => {
