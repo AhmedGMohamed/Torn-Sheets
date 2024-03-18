@@ -8,7 +8,7 @@ import placeAuth from "./middleware/placeAuth.js";
 
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
 const CLIENT_EMAIL = process.env.CLIENT_EMAIL;
-const GOOGLE_API_KEY = process.env.PRIVATE_KEY.replace(/\\n/g, "\n");
+const GOOGLE_API_KEY = process.env.PRIVATE_KEY;
 
 const app = express();
 const port = process.env.PORT || 3000;
