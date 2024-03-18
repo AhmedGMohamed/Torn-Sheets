@@ -46,3 +46,5 @@ async function clearSpreadsheetFormatting(sheets) {
 		console.error("an error occured while clearing the spreadsheet", error);
 	}
 }
+
+export default clearSpreadsheetFormatting

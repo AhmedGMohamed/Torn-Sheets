@@ -61,4 +61,4 @@ function getRepeatCellRequest(
 	return repeatCell;
 }
 
-export default getRepeatCellRequest
+export default getRepeatCellRequest;

@@ -29,3 +29,5 @@ async function formatSpreadsheet(auth) {
 		);
 	}
 }
+
+export default formatSpreadsheet;

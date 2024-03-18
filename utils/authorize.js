@@ -1,5 +1,4 @@
 import { google } from "googleapis";
-//TODO: require the variables in the parameter list
 
 /**
  * request authorization to call the google API
@@ -13,12 +12,7 @@ import { google } from "googleapis";
 function authorize(clientEmail, keyFile = null, key, scopes) {
 	let client;
 	try {
-		client = new google.auth.JWT(
-			clientEmail,
-			keyFile,
-			key,
-			scopes
-		);
+		client = new google.auth.JWT(clientEmail, keyFile, key, scopes);
 		return client;
 	} catch (error) {
 		console.error(
@@ -27,3 +21,5 @@ function authorize(clientEmail, keyFile = null, key, scopes) {
 		);
 	}
 }
+
+export default authorize;

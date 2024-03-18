@@ -1,23 +1,22 @@
+import { google } from "googleapis";
+import { sheets_v4 } from "googleapis";
+
 /**
  * Fills the spreadsheet with the prices and quantities of items in bazaars
  *
  * @param {google.auth.OAuth2} auth an instance of the authenticated Google Oauth client
+ * @param {string} spreadsheetId the id of the spreadsheet
+ * @param {Array<sheets_v4.Schema$ValueRange[]>} data an array of ValueRange arrays
  */
-async function fillSpreadsheet(auth) {
+async function fillSpreadsheet(auth, spreadsheetId, data) {
 	const sheets = google.sheets({ version: "v4", auth });
-	//TODO: Remove these 2 lines and place them in the prices.js router
-	const itemsList = await getItemCodeList(ITEMS_PATH);
-	let batchData = await getFormattedBatchDataValues(itemsList);
 
 	try {
-		//TODO: Remove the clear function calls and place them in the prices.js router file
-		await clearSpreadsheetValues(sheets);
-		await clearSpreadsheetFormatting(sheets);
 		const res = await sheets.spreadsheets.values.batchUpdate({
-			spreadsheetId: SPREADSHEET_ID,
+			spreadsheetId: spreadsheetId,
 			requestBody: {
 				valueInputOption: "RAW",
-				data: batchData
+				data: data
 			}
 		});
 		const totalUpdatedColumns = res.data.totalUpdatedColumns;
@@ -36,5 +35,6 @@ async function fillSpreadsheet(auth) {
 			error
 		);
 	}
-	return batchData;
 }
+
+export default fillSpreadsheet;

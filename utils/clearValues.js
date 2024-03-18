@@ -5,11 +5,12 @@ import { sheets_v4 } from "googleapis";
  * clears the spreadsheet cells values for use
  *
  * @param {sheets_v4.Sheets} sheets a spreadsheets instance
+ * @param {string} sheetId the id of the spreadsheet
  */
-async function clearSpreadsheetValues(sheets) {
+async function clearSpreadsheetValues(sheets, sheetId) {
 	try {
 		await sheets.spreadsheets.values.clear({
-			spreadsheetId: SPREADSHEET_ID,
+			spreadsheetId: sheetId,
 			range: "Cache Prices!A1:ZZ1000"
 		});
 		let backgroundColorStyleDefault = {
@@ -29,7 +30,7 @@ async function clearSpreadsheetValues(sheets) {
 				}
 			};
 		await sheets.spreadsheets.batchUpdate({
-			spreadsheetId: SPREADSHEET_ID,
+			spreadsheetId: sheetId,
 			requestBody: {
 				requests: [
 					getRepeatCellRequest(
