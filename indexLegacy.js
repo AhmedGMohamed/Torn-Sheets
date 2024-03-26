@@ -1,8 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import process from "process";
-import { google } from "googleapis";
-import { sheets_v4 } from "googleapis";
+import { google, sheets_v4 } from "googleapis";
 import "dotenv/config";
 
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
@@ -14,8 +13,8 @@ const GOOGLE_API_KEY = process.env.PRIVATE_KEY.replace(/\\n/g, "\n");
 
 /**
  * request authorization to call API
- * * Function placed in utils
- * ! When calling in any router file, send CLIENT_EMAIL, null, GOOGLE_API_KEY & SCOPES as parameters 
+ * * Function placed in utils - DONE
+ * ! When calling in any router file, send CLIENT_EMAIL, null, GOOGLE_API_KEY & SCOPES as parameters
  */
 function authorize() {
 	let client;
@@ -36,8 +35,8 @@ function authorize() {
 }
 
 /**
- * TODO: Place this in prices.js router file
- * 
+ * * Place this in prices.js router file - DONE
+ *
  * Gets the prices and quantities for the item corresponding itemID
  *
  * @description Creates a 2d array structured as follows:
@@ -85,7 +84,8 @@ async function getBazaarPrices(key, itemID) {
 /**
  * TODO: maybe replace this with something more dynamic and web/remote friendly
  * * a viable way would be to recieve an array from the client with the item codes
- * 
+ * * DONE - removed local item codes and made the server recieve the values from the user in the request body
+ *
  * Reads the json file and returns an array of itemIDs
  *
  * @param {string} path the name of the file containing the itemIDs to search
@@ -99,7 +99,7 @@ async function getItemCodeList(path) {
 }
 /**
  * * function has been placed in utils - DONE
- * 
+ *
  * class that makes an iterable object that returns a string
  * in the form of character sequences e.x: AA, AB, ..., AZ, BA, BB, ...
  */
@@ -174,7 +174,7 @@ class StringIdGenerator {
  * * Placed this in the prices.js route file - DONE
  * TODO: Place this as it's own util, and make it more dynamic for different sheets
  * ? Maybe this shouldn't be a util, and instead recreated for each different route/sheet?
- * 
+ *
  * gets the prices and formats them for the batchUpdate function
  *
  * @param {Array<Array<string|number>>} itemsList a 2d array supplied from
@@ -200,7 +200,7 @@ async function getFormattedBatchDataValues(itemsList) {
 
 /**
  * * function placed in utils - DONE
- * 
+ *
  * clears the spreadsheet cells values for use
  *
  * @param {sheets_v4.Sheets} sheets a spreadsheets instance
@@ -253,7 +253,7 @@ async function clearSpreadsheetValues(sheets) {
  * * function placed in utils - DONE
  *
  * clears the spreadsheet formatting for use
- * 
+ *
  * @param {sheets_v4.Sheets} sheets a spreadsheets instance
  */
 async function clearSpreadsheetFormatting(sheets) {
@@ -298,10 +298,10 @@ async function clearSpreadsheetFormatting(sheets) {
 }
 
 /**
- * * function placed in utils
+ * * function placed in utils - DONE
  * TODO: remove the clear spreadsheet functions
  * TODO: call the removed functions in the prices.js router file and any other router files
- * 
+ *
  * Fills the spreadsheet with the prices and quantities of items in bazaars
  *
  * @param {google.auth.OAuth2} auth an instance of the authenticated Google Oauth client
@@ -342,7 +342,7 @@ async function fillSpreadsheet(auth) {
 
 /**
  * * function placed in utils - DONE
- * 
+ *
  * creates a GridRange object from the parameters passed
  *
  * @param {number} sheetId the gid of the sheet
@@ -371,9 +371,10 @@ function getGridRange(
 }
 
 /**
+ * * DONE - placed function in utils folder
  * TODO: place this file in the utils folder
  * ! don't forget to import getGridRange when transferring to the utils folder
- * 
+ *
  * Creates a formatted Schema$Request array with Schema$MergeCellsRequest objects for
  * merging two columns per item in the list in the first row
  * @param {number[]} itemsList - an array of items IDs that represent the total columns
@@ -401,7 +402,7 @@ function getMergeCellsRequests(itemsList) {
 
 /**
  * * function placed in util - DONE
- * 
+ *
  * creates an RepeatCellRequest object that createse a header row
  *
  * @param {number[]}  gridData an array containing the sheetId, start and end indices of both rows and columns
@@ -464,15 +465,16 @@ function getRepeatCellRequest(
 }
 
 /**
+ * * DONE - Placed in the utils folder (frozenRowRequest)
  * TODO: Place this in the utils folder
  * ? maybe this shouldn't be a util and instead implemented as required in each router?
- * 
+ *
  * Creates an array containing requests for formatting a header row
  *
  * @param {number} itemsListLength the number of items that have been queried
  * @returns {sheets_v4.Schema$Request[]} an array containing requests for formatting the header row
  */
-function getHeaderRequests(itemsListLength) {
+function getHeaderRequests(itemsListLength, sheetId) {
 	let requests = [],
 		repeatCell,
 		updateSheetProperties,
@@ -480,9 +482,9 @@ function getHeaderRequests(itemsListLength) {
 		numberFormat = null,
 		backgroundColorStyle,
 		foregroundColorStyle,
-		fontSize,
-		bold,
-		horizontalAlignment,
+		fontSize = 12,
+		bold = true,
+		horizontalAlignment = "CENTER",
 		verticalAlignment = null;
 
 	gridData = [0, 0, 1, 0, itemsListLength * 2];
@@ -502,9 +504,6 @@ function getHeaderRequests(itemsListLength) {
 			alpha: 1
 		}
 	};
-	fontSize = 12;
-	bold = true;
-	horizontalAlignment = "CENTER";
 	repeatCell = getRepeatCellRequest(
 		gridData,
 		numberFormat,
@@ -518,7 +517,7 @@ function getHeaderRequests(itemsListLength) {
 	updateSheetProperties = {
 		updateSheetProperties: {
 			properties: {
-				sheetId: 0,
+				sheetId: sheetId,
 				gridProperties: {
 					frozenRowCount: 1
 				}
@@ -531,6 +530,7 @@ function getHeaderRequests(itemsListLength) {
 }
 
 /**
+ * * DONE - Placed in the prices.js router file
  * TODO: Place this in the prices.js router file
  * Determines the tier of the items using the average market price
  *
@@ -556,11 +556,14 @@ function getPriceTiers(itemPrices, averagePrice) {
 }
 
 /**
+ * * DONE (thankfully) - Placed in prices.js router file
+ * * Note to self: I reeally need to use an OOP based approach forthe stuff in the router.js file - this is starting to look like fucked up spaghetti code again
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * oh boy this is gonna be a messy one...
  * TODO: place this in the prices.js router
  * TODO: remove the getItemCodeList if you changed the implementation (Check this before placing this in the routes folder)
  * ! if the function isn't removed, don't forget to import it if it's in a different folder as it's own module
- * 
+ *
  * gets the market price for each item and returns an array of ColorStyle objects depending on the item's tier
  *
  * @param {string[]} itemsCodeList a list containing the code for each item
@@ -617,9 +620,10 @@ async function getItemsColoring(itemsCodeList, colorPallete) {
 }
 
 /**
+ * * DONE - placed in prices.js router file -  please future me, use classes and OOP design principles
  * TODO: Place this in the prices.js router
  * ! don't forget to import getRepearCellRequest
- * 
+ *
  * creates a repeatCellRequest for each item and item tier
  *
  * @param {*} itemsList a list containing all the items' codes
@@ -704,7 +708,7 @@ async function getItemTierColoringRequests(itemsList) {
 /**
  * * function placed in utils folder
  * TODO: remove sheet specific function calls and make this function more generic
- * TODO: 
+ * TODO:
  * Formats the spreadsheet after filling using the fillSpreadsheet() function
  *
  * @param {google.auth.OAuth2} auth an instance of the authenticated Google Oauth client
@@ -734,8 +738,8 @@ async function formatSpreadsheet(auth) {
 	}
 }
 
-// TODO: Place this in index.js
+// DONE: Place this in index.js
 const auth = authorize();
-// TODO: Place these in the prices.js router file and other router files as needed
+// DONE: Place these in the prices.js router file and other router files as needed
 const batchData = await fillSpreadsheet(auth);
 await formatSpreadsheet(auth, batchData);
