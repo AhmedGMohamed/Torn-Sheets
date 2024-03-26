@@ -1,5 +1,5 @@
 import { sheets_v4 } from "googleapis";
-import getRepeatCellRequest from "./repeatCellRequest";
+import getRepeatCellRequest from "./repeatCellRequest.js";
 /**
  * Creates an array containing requests for formatting a header row
  *
@@ -15,15 +15,13 @@ function getHeaderRequests(itemsListLength, sheetId, backgroundColorStyle, foreg
 		updateSheetProperties,
 		gridData,
 		numberFormat = null,
-		backgroundColorStyle,
-		foregroundColorStyle,
 		fontSize = 12,
 		bold = true,
 		horizontalAlignment = "CENTER",
 		verticalAlignment = null;
 
 	gridData = [0, 0, 1, 0, itemsListLength * 2];
-	
+
 	repeatCell = getRepeatCellRequest(
 		gridData,
 		numberFormat,

@@ -8,7 +8,7 @@ import stringGenerator from "../utils/alphabetNumberingGen.js";
 import clearSpreadsheetFormatting from "../utils/clearFormat.js";
 import clearSpreadsheetValues from "../utils/clearValues.js";
 import fillSpreadsheet from "../utils/fillSpreadsheet.js";
-import frozenRowRequests from "../utils/frozenRowRequest";
+import frozenRowRequests from "../utils/frozenRowRequest.js";
 import formatSpreadsheet from "../utils/formatSpreadsheet.js";
 import getRepeatCellRequest from "../utils/repeatCellRequest.js";
 let router = express.Router();
@@ -118,9 +118,10 @@ function getPriceTier(itemPrices, averagePrice) {
  * D: sheets_v4.Schema$ColorStyle,
  * F: sheets_v4.Schema$ColorStyle
  * }} colors a color pallette to use for the item grading system
+ * @param {string} torn_api_key the TORN API key to use
  * @returns {Promise<Array<Array<sheets_v4.Schema$ColorStyle>>>} a 2d array cotaining ColorStyle objects that correspond to each item price's tier
  */
-async function getItemsColoring(itemsCodeList, colorPallete) {
+async function getItemsColoring(itemsCodeList, colorPallete, torn_api_key) {
 	let allItemsPriceTiers = [],
 		currentItem = [],
 		averagePrices = [],
@@ -129,7 +130,7 @@ async function getItemsColoring(itemsCodeList, colorPallete) {
 	for (let item of itemsCodeList) {
 		try {
 			const res = await fetch(
-				`https://api.torn.com/torn/${item}?key=${TORN_API_KEY}&selections=items&comment=CachePriceScript`
+				`https://api.torn.com/torn/${item}?key=${torn_api_key}&selections=items&comment=CachePriceScript`
 			);
 			const marketValue = (await res.json()).items[item].market_value;
 			averagePrices.push(+marketValue);
@@ -145,7 +146,7 @@ async function getItemsColoring(itemsCodeList, colorPallete) {
 		const item = itemsCodeList[i];
 		let itemPriceTier;
 
-		currentItem = await getBazaarPrices(TORN_API_KEY, item);
+		currentItem = await getBazaarPrices(torn_api_key, item);
 		currentItem = currentItem[0];
 		currentItem.shift();
 		itemPriceTier = getPriceTier(currentItem, averagePrices[i]);
@@ -165,10 +166,11 @@ async function getItemsColoring(itemsCodeList, colorPallete) {
 /**
  * creates a repeatCellRequest for each item and item tier
  *
- * @param {*} itemsList a list containing all the items' codes
+ * @param {Array<string|number>} itemsList a list containing all the items' codes
+ * @param {string} torn_api_key the TORN API key to use
  * @returns {Promise<Array<sheets_v4.Schema$RepeatCellRequest>>}
  */
-async function getItemTierColoringRequests(itemsList) {
+async function getItemTierColoringRequests(itemsList, torn_api_key) {
 	// color schemes for each price tier
 	const colors = {
 		A: {
@@ -217,7 +219,7 @@ async function getItemTierColoringRequests(itemsList) {
 			}
 		}
 	};
-	const colorStyles = await getItemsColoring(itemsList, colors);
+	const colorStyles = await getItemsColoring(itemsList, colors, torn_api_key);
 	let row = 1,
 		col = 0; // increment row by 1 (starts from 1 to ignore header row) and increment col by 2 (to skip the item count column)
 	let repeatCellRequests = [];
@@ -291,14 +293,18 @@ router.post("/", async (req, res) => {
 			foregroundColorStyle
 		);
 		// get a coloring request for each bazaar item
-		let itemColoringRequests = await getItemTierColoringRequests(itemsList);
+		let itemColoringRequests = await getItemTierColoringRequests(
+			itemsList,
+			tornKey
+		);
 
 		formatRequests.push(...headerRowRequests, itemColoringRequests);
 		// Format the spreadsheet using the requests supplied
-		await formatSpreadsheet(auth, formatRequests);
+		await formatSpreadsheet(auth, formatRequests, spreadsheetId);
 
 		res.status(200).send("Successfuly updated the spreadsheet");
 	} catch (error) {
+		console.error(error);
 		res.status(500).send(
 			`An error occurred while updating the spreadsheet\nError: ${error}`
 		);
