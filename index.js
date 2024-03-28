@@ -2,9 +2,10 @@ import express from "express";
 import path from "path";
 import process from "process";
 import "dotenv/config";
-import itemsRouter from "./routes/prices.js";
 import authorize from "./utils/authorize.js";
 import placeAuth from "./middleware/placeAuth.js";
+import itemsRouter from "./routes/prices.js";
+import estimatesRouter from "./routes/estimates.js";
 
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
 const CLIENT_EMAIL = process.env.CLIENT_EMAIL;
@@ -28,6 +29,8 @@ app.get("/", (_req, res) => {
 
 // Handle requests for getting item prices and placing them in the spreadsheet
 app.use("/items", placeAuth, itemsRouter);
+
+app.use("/estimates", placeAuth, estimatesRouter);
 
 //Initializes the server with the port
 app.listen(port, () => {

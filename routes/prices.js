@@ -121,7 +121,7 @@ function getPriceTier(itemPrices, averagePrice) {
  * @param {string} torn_api_key the TORN API key to use
  * @returns {Promise<Array<Array<sheets_v4.Schema$ColorStyle>>>} a 2d array cotaining ColorStyle objects that correspond to each item price's tier
  */
-async function getItemsColoring(itemsCodeList, colorPallete, torn_api_key) {
+async function getItemsColoring(itemsCodeList, colorPallete, tornApiKey) {
 	let allItemsPriceTiers = [],
 		currentItem = [],
 		averagePrices = [],
@@ -130,7 +130,7 @@ async function getItemsColoring(itemsCodeList, colorPallete, torn_api_key) {
 	for (let item of itemsCodeList) {
 		try {
 			const res = await fetch(
-				`https://api.torn.com/torn/${item}?key=${torn_api_key}&selections=items&comment=CachePriceScript`
+				`https://api.torn.com/torn/${item}?key=${tornApiKey}&selections=items&comment=CachePriceScript`
 			);
 			const marketValue = (await res.json()).items[item].market_value;
 			averagePrices.push(+marketValue);
@@ -146,7 +146,7 @@ async function getItemsColoring(itemsCodeList, colorPallete, torn_api_key) {
 		const item = itemsCodeList[i];
 		let itemPriceTier;
 
-		currentItem = await getBazaarPrices(torn_api_key, item);
+		currentItem = await getBazaarPrices(tornApiKey, item);
 		currentItem = currentItem[0];
 		currentItem.shift();
 		itemPriceTier = getPriceTier(currentItem, averagePrices[i]);
@@ -170,7 +170,7 @@ async function getItemsColoring(itemsCodeList, colorPallete, torn_api_key) {
  * @param {string} torn_api_key the TORN API key to use
  * @returns {Promise<Array<sheets_v4.Schema$RepeatCellRequest>>}
  */
-async function getItemTierColoringRequests(itemsList, torn_api_key) {
+async function getItemTierColoringRequests(itemsList, tornApiKey) {
 	// color schemes for each price tier
 	const colors = {
 		A: {
@@ -219,7 +219,7 @@ async function getItemTierColoringRequests(itemsList, torn_api_key) {
 			}
 		}
 	};
-	const colorStyles = await getItemsColoring(itemsList, colors, torn_api_key);
+	const colorStyles = await getItemsColoring(itemsList, colors, tornApiKey);
 	let row = 1,
 		col = 0; // increment row by 1 (starts from 1 to ignore header row) and increment col by 2 (to skip the item count column)
 	let repeatCellRequests = [];
@@ -248,22 +248,23 @@ async function getItemTierColoringRequests(itemsList, torn_api_key) {
 }
 router.post("/", async (req, res) => {
 	const auth = req.body.google_auth,
-		spreadsheetId = req.body.spreadsheet_id,
-		sheetId = req.body.sheet_id,
+		spreadsheetID = req.body.spreadsheet_id,
+		sheetID = req.body.sheet_id,
 		itemsList = req.body.items,
 		tornKey = req.body.torn_api_key;
 
 	console.log("POST request to items recieved");
 
 	let sheets = google.sheets({ version: "v4", auth });
+
 	try {
 		// Gets the data to use in the google sheets request
 		let data = await getFormattedBatchDataValues(itemsList, tornKey);
 
 		// clears the spreadsheet of any existing data or formats
-		await clearSpreadsheetValues(sheets, spreadsheetId);
-		await clearSpreadsheetFormatting(sheets, spreadsheetId);
-		await fillSpreadsheet(auth, spreadsheetId, data);
+		await clearSpreadsheetValues(sheets, spreadsheetID);
+		await clearSpreadsheetFormatting(sheets, spreadsheetID);
+		await fillSpreadsheet(auth, spreadsheetID, data);
 
 		// an array that will contain all the requests that will be supplied to the formatSpreadsheet function
 		let formatRequests = [];
@@ -288,7 +289,7 @@ router.post("/", async (req, res) => {
 		// get the header row (frozen row) requests (it's an array with a mergeCell Request and a updateSheetProperties Request)
 		let headerRowRequests = frozenRowRequests(
 			itemsList.length,
-			sheetId,
+			sheetID,
 			backgroundColorStyle,
 			foregroundColorStyle
 		);
@@ -300,7 +301,7 @@ router.post("/", async (req, res) => {
 
 		formatRequests.push(...headerRowRequests, itemColoringRequests);
 		// Format the spreadsheet using the requests supplied
-		await formatSpreadsheet(auth, formatRequests, spreadsheetId);
+		await formatSpreadsheet(auth, formatRequests, spreadsheetID);
 
 		res.status(200).send("Successfuly updated the spreadsheet");
 	} catch (error) {
