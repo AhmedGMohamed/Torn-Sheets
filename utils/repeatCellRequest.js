@@ -1,6 +1,6 @@
 import getGridRange from "./gridRange.js";
 /**
- * creates an RepeatCellRequest object that createse a header row
+ * creates an RepeatCellRequest object for changing the format
  *
  * @param {number[]}  gridData an array containing the sheetId, start and end indices of both rows and columns
  * @param {sheets_v4.Schema$NumberFormat|null} numberFormat

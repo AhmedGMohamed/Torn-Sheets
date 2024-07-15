@@ -20,7 +20,7 @@ function getHeaderRequests(itemsListLength, sheetId, backgroundColorStyle, foreg
 		horizontalAlignment = "CENTER",
 		verticalAlignment = null;
 
-	gridData = [0, 0, 1, 0, itemsListLength * 2];
+	gridData = [0, 0, 1, 0, (itemsListLength || 1) * 2];
 
 	repeatCell = getRepeatCellRequest(
 		gridData,
